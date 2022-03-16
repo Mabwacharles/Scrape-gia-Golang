@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -41,16 +43,28 @@ func main() {
 		fmt.Println(error)
 	}
 
+	file, error := os.Create("posts.csv")
+	if error != nil {
+		fmt.Println(error)
+	}
+
+	writer := csv.NewWriter(file)
+
 	success := doc.Find("div.river").Find("div.post-block").Each(func(index int, item *goquery.Selection) {
 		h2 := item.Find("h2").Text() // get the title
 		p := item.Find("p").Text()   // get the description
-		fmt.Println(h2)
-		fmt.Println(p)
+		url := item.Find("a").AttrOr("href", "")
+
+		excerpt := strings.TrimSpace(item.Find("div.post-block_content").Text())
+
+		posts := []string{h2, p, excerpt, url}
+
+		writer.Write(posts)
+
 	})
-	// fmt.Println(doc)
-	// fmt.Println(success)
 
 	fmt.Println("Successfully retrieved", success)
 
-	// writeFile(success, "techcrunch.html")
+	writer.Flush()
+
 }
