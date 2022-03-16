@@ -30,5 +30,10 @@ func main() {
 		fmt.Println(error)
 	}
 
+	test, error := doc.Find("h3").Html()
+	if error != nil {
+		fmt.Println(error)
+	}
 	fmt.Println(doc)
+	fmt.Println(test)
 }
