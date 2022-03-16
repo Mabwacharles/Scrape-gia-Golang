@@ -12,11 +12,12 @@ func main() {
 
 	// Create a new request using http
 	response, error := http.Get(url)
-	defer response.Body.Close()
 
 	if error != nil {
 		fmt.Println(error)
 	}
+
+	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
 		fmt.Println("Successfully retrieved", url)
@@ -28,4 +29,6 @@ func main() {
 	if error != nil {
 		fmt.Println(error)
 	}
+
+	fmt.Println(doc)
 }
