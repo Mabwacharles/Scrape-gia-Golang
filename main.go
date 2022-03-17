@@ -20,17 +20,15 @@ func writeFile(data, filename string) {
 
 	file.WriteString(data)
 }
-func main() {
-	url := "https://techcrunch.com/"
 
-	// Create a new request using http
+// Create a new request using http
+func getHtml(url string) *http.Response {
+
 	response, error := http.Get(url)
 
 	if error != nil {
 		fmt.Println(error)
 	}
-
-	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
 		fmt.Println("Successfully retrieved", url)
@@ -38,19 +36,31 @@ func main() {
 		fmt.Println("Couldn't retrieve", url)
 	}
 
-	doc, error := goquery.NewDocumentFromReader(response.Body)
-	if error != nil {
-		fmt.Println(error)
-	}
+	return response
 
-	file, error := os.Create("posts.csv")
+}
+
+func writeCsv(posts []string) {
+	filename := "posts.csv"
+
+	file, error := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
 	if error != nil {
 		fmt.Println(error)
 	}
+	defer file.Close()
 
 	writer := csv.NewWriter(file)
+	defer writer.Flush()
 
-	success := doc.Find("div.river").Find("div.post-block").Each(func(index int, item *goquery.Selection) {
+	error = writer.Write(posts)
+	if error != nil {
+		fmt.Println(error)
+	}
+}
+
+func scrapePageData(doc *goquery.Document) {
+	doc.Find("div.river").Find("div.post-block").Each(func(index int, item *goquery.Selection) {
 		h2 := item.Find("h2").Text() // get the title
 		p := item.Find("p").Text()   // get the description
 		url := item.Find("a").AttrOr("href", "")
@@ -59,12 +69,23 @@ func main() {
 
 		posts := []string{h2, p, excerpt, url}
 
-		writer.Write(posts)
+		writeCsv(posts)
 
 	})
+}
 
-	fmt.Println("Successfully retrieved", success)
+func main() {
 
-	writer.Flush()
+	url := "https://techcrunch.com/"
+
+	response := getHtml(url)
+	defer response.Body.Close()
+
+	doc, error := goquery.NewDocumentFromReader(response.Body)
+	if error != nil {
+		fmt.Println(error)
+
+		scrapePageData(doc)
+	}
 
 }
